@@ -9,6 +9,12 @@ a ListView and GridView support section like iOS，header pinned，item staggere
 
 ## Getting Started
 
+### Usage
+
+```
+import 'package:flutter_section_list/flutter_section_list.dart';
+```
+
 ### List
 
 ```
