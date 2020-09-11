@@ -2,7 +2,8 @@
 
 a list and grid support section like iOS，header pinned，item staggered.
 
-
+![avatar](https://github.com/lhx546920268/flutter_section_list/blob/master/list.png)
+![avatar](https://github.com/lhx546920268/flutter_section_list/blob/master/grid.png)
 
 ## Getting Started
 
