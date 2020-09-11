@@ -1,14 +1,145 @@
 # flutter_section_list
 
-A new Flutter package project.
+a list and grid support section like iOS，header pinned，item staggered.
+
+
 
 ## Getting Started
 
-This project is a starting point for a Dart
-[package](https://flutter.dev/developing-packages/),
-a library module containing code that can be shared easily across
-multiple Flutter or Dart projects.
+### List
 
-For help getting started with Flutter, view our 
-[online documentation](https://flutter.dev/docs), which offers tutorials, 
-samples, guidance on mobile development, and a full API reference.
+```
+class SectionListDemo extends StatelessWidget with SectionAdapterMixin{
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('SectionListDemo'),),
+      body: SectionListView.builder(adapter: this),
+    );
+  }
+
+  @override
+  int numberOfSections() {
+    return 10;
+  }
+
+  @override
+  int numberOfItems(int section) {
+    return 15;
+  }
+
+  @override
+  Widget getItem(BuildContext context, IndexPath indexPath) {
+    ...
+  }
+
+  @override
+  bool shouldExistSectionHeader(int section) {
+    return true;
+  }
+
+  @override
+  bool shouldSectionHeaderStick(int section) {
+    return true;
+  }
+
+  @override
+  bool shouldExistSectionFooter(int section) {
+    return false;
+  }
+
+  @override
+  Widget getSectionHeader(BuildContext context, int section) {
+    ...
+  }
+
+  @override
+  Widget getSectionFooter(BuildContext context, int section) {
+    ...
+  }
+}
+```
+
+### Grid
+
+```
+class _SectionGridViewWidget extends StatelessWidget with SectionAdapterMixin, SectionGridAdapterMixin {
+
+  @override
+  Widget build(BuildContext context) {
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("SectionGridView"),
+      ),
+      body: SectionGridView.builder(adapter: this),
+    );
+  }
+
+  @override
+  Widget getItem(BuildContext context, IndexPath indexPath) {
+    ...
+  }
+
+  @override
+  int numberOfItems(int section) {
+    return 10;
+  }
+
+  @override
+  int numberOfSections() {
+    return 10;
+  }
+
+  @override
+  double getMainAxisSpacing(int section) {
+    return 5;
+  }
+
+  @override
+  double getCrossAxisSpacing(int section) {
+    return 5;
+  }
+
+  @override
+  EdgeInsets getSectionInsets(int section) {
+    return EdgeInsets.fromLTRB(10, 8, 10, 8);
+  }
+
+  @override
+  bool shouldExistSectionHeader(int section) {
+    return true;
+  }
+
+  @override
+  bool shouldSectionHeaderStick(int section) {
+    return true;
+  }
+
+  @override
+  bool shouldExistSectionFooter(int section) {
+    return false;
+  }
+
+  @override
+  double getFooterItemSpacing(int section) {
+    return 5;
+  }
+
+  @override
+  double getHeaderItemSpacing(int section) {
+    return 5;
+  }
+
+  @override
+  Widget getSectionHeader(BuildContext context, int section) {
+    ...
+  }
+
+  @override
+  Widget getSectionFooter(BuildContext context, int section) {
+    ...
+  }
+}
+```
