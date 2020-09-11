@@ -1,7 +1,10 @@
 # flutter_section_list
 
-a list and grid support section like iOS，header pinned，item staggered.
+a ListView and GridView support section like iOS，header pinned，item staggered.
 
+|GridView|ListView|
+|:---:|:---:|
+|![]("https://github.com/lhx546920268/flutter_section_list/blob/master/grid.png")|![]("https://github.com/lhx546920268/flutter_section_list/blob/master/grid.png")|
 
 
 ## Getting Started
