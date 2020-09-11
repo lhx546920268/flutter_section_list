@@ -1,8 +1,8 @@
 name: flutter_section_list
-description: A new Flutter package project.
-version: 0.0.1
-author:
-homepage:
+description: A ListView and GridView support section like iOS，header pinned，item staggered.
+version: 1.0.1
+homepage: https://github.com/lhx546920268/flutter_section_list
+repository: https://github.com/lhx546920268/flutter_section_list
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
