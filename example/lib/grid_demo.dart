@@ -140,4 +140,36 @@ class _SectionGridViewState extends State<SectionGridViewDemo> with SectionAdapt
       ),
     );
   }
+
+  @override
+  bool shouldExistHeader() {
+    return true;
+  }
+
+  @override
+  bool shouldExistFooter() {
+    return true;
+  }
+
+  @override
+  Widget getHeader(BuildContext context) {
+    return Container(
+      height: 200,
+      color: Colors.amber,
+      child: Center(
+        child: Text('Header'),
+      ),
+    );
+  }
+
+  @override
+  Widget getFooter(BuildContext context) {
+    return Container(
+      height: 200,
+      color: Colors.amber,
+      child: Center(
+        child: Text('Footer'),
+      ),
+    );
+  }
 }

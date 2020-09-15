@@ -24,6 +24,7 @@ abstract class SectionAdapter {
 
   ///创建sectionInfo
   SectionInfo createSection(int section, int numberOfItems, int position);
+  SectionInfo createExtraSection(int section, int numberOfItems, int position);
 }
 
 mixin SectionAdapterMixin implements SectionAdapter {
@@ -42,10 +43,19 @@ mixin SectionAdapterMixin implements SectionAdapter {
   ///item总数
   int _totalCount;
   final List<SectionInfo> _sectionInfos = List();
+  SectionInfo _headerSectionInfo;
+  SectionInfo _footerSectionInfo;
 
   ///构建item 组件，内部使用，通常情况下子类不需要重写这个
   @override
   Widget buildItem(BuildContext context, int position) {
+
+    if(shouldExistHeader() && position == 0){
+      return getHeader(context);
+    }else if(shouldExistFooter() && position == _totalCount - 1){
+      return getFooter(context);
+    }
+
     SectionInfo info = sectionInfoForPosition(position);
     if (info.isHeader(position)) {
       return getSectionHeader(context, info.section);
@@ -68,6 +78,7 @@ mixin SectionAdapterMixin implements SectionAdapter {
       int count = 0;
 
       if (shouldExistHeader()) {
+        _headerSectionInfo = createExtraSection(-1, 0, count);
         count++;
       }
 
@@ -83,6 +94,7 @@ mixin SectionAdapterMixin implements SectionAdapter {
       }
 
       if (shouldExistFooter()) {
+        _footerSectionInfo = createExtraSection(_sectionInfos.length, 0, count);
         count++;
       }
       _totalCount = count;
@@ -105,9 +117,25 @@ mixin SectionAdapterMixin implements SectionAdapter {
     return sectionInfo;
   }
 
+  @override
+  SectionInfo createExtraSection(int section, int numberOfItems, int position) {
+    return SectionInfo(section: section, numberItems: numberOfItems, sectionBegin: position);
+  }
+
   ///通过position获取对应的sectionInfo
   @override
   SectionInfo sectionInfoForPosition(int position) {
+
+    if(_totalCount == null) return null;
+
+    if(position == 0 && shouldExistHeader()){
+      return _headerSectionInfo;
+    }
+
+    if(position == _totalCount - 1 && shouldExistFooter()){
+      return _footerSectionInfo;
+    }
+
     if (_sectionInfos.length == 0) return null;
 
     var info = _sectionInfos[0];
@@ -247,5 +275,10 @@ mixin SectionGridAdapterMixin on SectionAdapterMixin implements SectionGridAdapt
         footerItemSpacing: getFooterItemSpacing(section));
 
     return sectionInfo;
+  }
+
+  @override
+  GridSectionInfo createExtraSection(int section, int numberOfItems, int position) {
+    return GridSectionInfo(section: section, numberItems: numberOfItems, sectionBegin: position);
   }
 }
