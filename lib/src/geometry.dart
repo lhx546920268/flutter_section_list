@@ -101,7 +101,7 @@ class RowGridGeometry{
     crossAxisOffset = 0;
     scrollOffset = endGeometry?.mainEnd ?? 0;
     if(sectionInfo.sectionBegin == index){
-      if(previousSectionInfo.section != 0){
+      if(sectionInfo.section != 0){
         scrollOffset += previousSectionInfo.sectionInsets.bottom;
       }
       scrollOffset += sectionInfo.sectionInsets.top;
