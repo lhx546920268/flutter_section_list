@@ -13,7 +13,7 @@ a ListView and GridView support section like iOS，header pinned，item staggere
 
 ```
 dependencies:
-  flutter_section_list: ^1.0.2
+  flutter_section_list: ^1.0.3
 ```
 
 ```
