@@ -120,7 +120,6 @@ class SectionRenderSliverGrid extends SectionRenderSliverMultiBoxAdaptor {
     _adapter = adapter;
     _pageGridGeometries.clear();
     _children.clear();
-    _currentStickChild = null;
   }
 
   @override

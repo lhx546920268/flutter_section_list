@@ -1,5 +1,8 @@
 # Change log
 
+# 1.0.4
+>Fix hot reload bug
+
 # 1.0.3
 >Fix bug
 
