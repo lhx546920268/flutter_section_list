@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter_section_list/src/geometry.dart';
@@ -109,6 +110,9 @@ class SectionRenderSliverGrid extends SectionRenderSliverMultiBoxAdaptor {
   ///当前置顶的子视图
   RenderBox _currentStickChild;
 
+  ///当前
+  int _stickSection;
+
   SectionRenderSliverGrid(
       {@required RenderSliverBoxChildManager childManager,
       @required SectionGridAdapter adapter})
@@ -127,6 +131,7 @@ class SectionRenderSliverGrid extends SectionRenderSliverMultiBoxAdaptor {
 
     final SliverConstraints constraints = this.constraints;
     _adapter.crossAxisExtent = constraints.crossAxisExtent;
+    _adapter.mainAxisExtent = constraints.viewportMainAxisExtent;
 
     childManager.didStartLayout();
     childManager.setDidUnderflow(false);
@@ -347,6 +352,17 @@ class SectionRenderSliverGrid extends SectionRenderSliverMultiBoxAdaptor {
           parentData.crossAxisOffset = geometry.crossAxisOffset;
           _currentStickChild = child;
           hasStick = true;
+        }
+
+        if(_stickSection != currentSectionInfo.section){
+          _stickSection = currentSectionInfo.section;
+          int section = _stickSection;
+          //必须延迟，否则在回调中setState会抛出异常
+          Timer(Duration(milliseconds: 100), () {
+            if(_stickSection == section){
+              _adapter.onSectionHeaderStick(_stickSection);
+            }
+          });
         }
       }
     }

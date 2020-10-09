@@ -7,6 +7,9 @@ abstract class SectionAdapter {
   ///列表交叉轴大小
   double crossAxisExtent;
 
+  ///列表主轴大小
+  double mainAxisExtent;
+
   ///数据变了
   bool notifyDataChange();
 
@@ -25,6 +28,9 @@ abstract class SectionAdapter {
   ///创建sectionInfo
   SectionInfo createSection(int section, int numberOfItems, int position);
   SectionInfo createExtraSection(int section, int numberOfItems, int position);
+
+  ///header 吸顶了
+  void onSectionHeaderStick(int section);
 }
 
 mixin SectionAdapterMixin implements SectionAdapter {
@@ -32,6 +38,10 @@ mixin SectionAdapterMixin implements SectionAdapter {
   ///列表交叉轴大小
   @override
   double crossAxisExtent;
+
+  ///列表主轴大小
+  @override
+  double mainAxisExtent;
 
   @override
   bool notifyDataChange(){
@@ -193,6 +203,11 @@ mixin SectionAdapterMixin implements SectionAdapter {
   ///是否需要吸顶悬浮
   bool shouldSectionHeaderStick(int section) {
     return false;
+  }
+
+  @override
+  void onSectionHeaderStick(int section) {
+
   }
 
   Widget getHeader(BuildContext context) {
