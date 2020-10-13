@@ -1,5 +1,8 @@
 # Change log
 
+# 1.0.5
+>Upgrade to flutter 1.22.1
+
 # 1.0.4
 >Fix hot reload bug
 

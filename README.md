@@ -13,16 +13,14 @@ a ListView and GridView support section like iOS，header pinned，item staggere
 
 ```
 dependencies:
-  flutter_section_list: ^1.0.4
-```
-
-```
-import 'package:flutter_section_list/flutter_section_list.dart';
+  flutter_section_list: ^1.0.5
 ```
 
 ### List
 
 ```
+import 'package:flutter_section_list/flutter_section_list.dart';
+
 class SectionListDemo extends StatelessWidget with SectionAdapterMixin{
 
   @override
@@ -78,6 +76,7 @@ class SectionListDemo extends StatelessWidget with SectionAdapterMixin{
 ### Grid
 
 ```
+import 'package:flutter_section_list/flutter_section_grid.dart';
 class _SectionGridViewWidget extends StatelessWidget with SectionAdapterMixin, SectionGridAdapterMixin {
 
   @override
