@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'dart:math';
-import 'package:flutter_section_list/flutter_section_list.dart';
+import 'package:flutter_section_list/flutter_section_grid.dart';
 
 class SectionGridViewDemo extends StatefulWidget{
 
