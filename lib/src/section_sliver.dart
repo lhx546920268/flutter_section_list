@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_section_list/src/section_sliver_multi_box_adapter.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
@@ -13,10 +14,9 @@ import 'package:flutter/widgets.dart';
 abstract class SectionSliverMultiBoxAdaptorWidget extends SliverWithKeepAliveWidget {
   /// Initializes fields for subclasses.
   const SectionSliverMultiBoxAdaptorWidget({
-    Key key,
-    @required this.delegate,
-  }) : assert(delegate != null),
-        super(key: key);
+    Key? key,
+    required this.delegate,
+  }) : super(key: key);
 
   /// {@template flutter.widgets.sliverMultiBoxAdaptor.delegate}
   /// The delegate that provides the children for this widget.
@@ -48,8 +48,8 @@ abstract class SectionSliverMultiBoxAdaptorWidget extends SliverWithKeepAliveWid
   ///
   /// The default implementation defers to [delegate] via its
   /// [SliverChildDelegate.estimateMaxScrollOffset] method.
-  double estimateMaxScrollOffset(
-      SliverConstraints constraints,
+  double? estimateMaxScrollOffset(
+      SliverConstraints? constraints,
       int firstIndex,
       int lastIndex,
       double leadingScrollOffset,
@@ -78,7 +78,21 @@ abstract class SectionSliverMultiBoxAdaptorWidget extends SliverWithKeepAliveWid
 /// the children of subclasses of [RenderSliverMultiBoxAdaptor].
 class SectionSliverMultiBoxAdaptorElement extends RenderObjectElement implements RenderSliverBoxChildManager {
   /// Creates an element that lazily builds children for the given widget.
-  SectionSliverMultiBoxAdaptorElement(SectionSliverMultiBoxAdaptorWidget widget) : super(widget);
+  ///
+  /// If `replaceMovedChildren` is set to true, a new child is proactively
+  /// inflate for the index that was previously occupied by a child that moved
+  /// to a new index. The layout offset of the moved child is copied over to the
+  /// new child. RenderObjects, that depend on the layout offset of existing
+  /// children during [RenderObject.performLayout] should set this to true
+  /// (example: [RenderSliverList]). For RenderObjects that figure out the
+  /// layout offset of their children without looking at the layout offset of
+  /// existing children this should be set to false (example:
+  /// [RenderSliverFixedExtentList]) to avoid inflating unnecessary children.
+  SectionSliverMultiBoxAdaptorElement(SectionSliverMultiBoxAdaptorWidget widget, {bool replaceMovedChildren = false})
+      : _replaceMovedChildren = replaceMovedChildren,
+        super(widget);
+
+  final bool _replaceMovedChildren;
 
   @override
   SectionSliverMultiBoxAdaptorWidget get widget => super.widget as SectionSliverMultiBoxAdaptorWidget;
@@ -97,56 +111,52 @@ class SectionSliverMultiBoxAdaptorElement extends RenderObjectElement implements
       performRebuild();
   }
 
-  // We inflate widgets at two different times:
-  //  1. When we ourselves are told to rebuild (see performRebuild).
-  //  2. When our render object needs a new child (see createChild).
-  // In both cases, we cache the results of calling into our delegate to get the widget,
-  // so that if we do case 2 later, we don't call the builder again.
-  // Any time we do case 1, though, we reset the cache.
-
-  final Map<int, Widget> _childWidgets = HashMap<int, Widget>();
   final SplayTreeMap<int, Element> _childElements = SplayTreeMap<int, Element>();
-  RenderBox _currentBeforeChild;
+  RenderBox? _currentBeforeChild;
 
   @override
   void performRebuild() {
-    _childWidgets.clear(); // Reset the cache, as described above.
     super.performRebuild();
     _currentBeforeChild = null;
     assert(_currentlyUpdatingChildIndex == null);
     try {
-      final SplayTreeMap<int, Element> newChildren = SplayTreeMap<int, Element>();
+      final SplayTreeMap<int, Element?> newChildren = SplayTreeMap<int, Element?>();
       final Map<int, double> indexToLayoutOffset = HashMap<int, double>();
 
       void processElement(int index) {
         _currentlyUpdatingChildIndex = index;
         if (_childElements[index] != null && _childElements[index] != newChildren[index]) {
           // This index has an old child that isn't used anywhere and should be deactivated.
-          _childElements[index] = updateChild(_childElements[index], null, index);
+          Element? newChild = updateChild(_childElements[index], null, index);
+          if (newChild != null) {
+            _childElements[index] = newChild;
+          } else {
+            _childElements.remove(index);
+          }
         }
-        final Element newChild = updateChild(newChildren[index], _build(index), index);
+        final Element? newChild = updateChild(newChildren[index], _build(index), index);
         if (newChild != null) {
           _childElements[index] = newChild;
-          final SectionSliverMultiBoxAdaptorParentData parentData = newChild.renderObject.parentData as SectionSliverMultiBoxAdaptorParentData;
+          final SectionSliverMultiBoxAdaptorParentData parentData = newChild.renderObject!.parentData! as SectionSliverMultiBoxAdaptorParentData;
           if (index == 0) {
             parentData.layoutOffset = 0.0;
           } else if (indexToLayoutOffset.containsKey(index)) {
             parentData.layoutOffset = indexToLayoutOffset[index];
           }
           if (!parentData.keptAlive)
-            _currentBeforeChild = newChild.renderObject as RenderBox;
+            _currentBeforeChild = newChild.renderObject as RenderBox?;
         } else {
           _childElements.remove(index);
         }
       }
       for (final int index in _childElements.keys.toList()) {
-        final Key key = _childElements[index].widget.key;
-        final int newIndex = key == null ? null : widget.delegate.findIndexByKey(key);
-        final SectionSliverMultiBoxAdaptorParentData childParentData =
-        _childElements[index].renderObject?.parentData as SectionSliverMultiBoxAdaptorParentData;
+        final Key? key = _childElements[index]!.widget.key;
+        final int? newIndex = key == null ? null : widget.delegate.findIndexByKey(key);
+        final SectionSliverMultiBoxAdaptorParentData? childParentData =
+        _childElements[index]!.renderObject?.parentData as SectionSliverMultiBoxAdaptorParentData?;
 
         if (childParentData != null && childParentData.layoutOffset != null)
-          indexToLayoutOffset[index] = childParentData.layoutOffset;
+          indexToLayoutOffset[index] = childParentData.layoutOffset!;
 
         if (newIndex != null && newIndex != index) {
           // The layout offset of the child being moved is no longer accurate.
@@ -154,8 +164,10 @@ class SectionSliverMultiBoxAdaptorElement extends RenderObjectElement implements
             childParentData.layoutOffset = null;
 
           newChildren[newIndex] = _childElements[index];
-          // We need to make sure the original index gets processed.
-          newChildren.putIfAbsent(index, () => null);
+          if (_replaceMovedChildren) {
+            // We need to make sure the original index gets processed.
+            newChildren.putIfAbsent(index, () => null);
+          }
           // We do not want the remapped child to get deactivated during processElement.
           _childElements.remove(index);
         } else {
@@ -177,18 +189,18 @@ class SectionSliverMultiBoxAdaptorElement extends RenderObjectElement implements
     }
   }
 
-  Widget _build(int index) {
-    return _childWidgets.putIfAbsent(index, () => widget.delegate.build(this, index));
+  Widget? _build(int index) {
+    return widget.delegate.build(this, index);
   }
 
   @override
-  void createChild(int index, { @required RenderBox after }) {
+  void createChild(int index, { required RenderBox? after }) {
     assert(_currentlyUpdatingChildIndex == null);
-    owner.buildScope(this, () {
+    owner!.buildScope(this, () {
       final bool insertFirst = after == null;
       assert(insertFirst || _childElements[index-1] != null);
-      _currentBeforeChild = insertFirst ? null : (_childElements[index-1].renderObject as RenderBox);
-      Element newChild;
+      _currentBeforeChild = insertFirst ? null : (_childElements[index-1]!.renderObject as RenderBox?);
+      Element? newChild;
       try {
         _currentlyUpdatingChildIndex = index;
         newChild = updateChild(_childElements[index], _build(index), index);
@@ -203,14 +215,14 @@ class SectionSliverMultiBoxAdaptorElement extends RenderObjectElement implements
     });
   }
 
-  RenderBox createOneChild(int index, int afterIndex, { @required RenderBox after }) {
+  RenderBox? createOneChild(int index, int afterIndex, { required RenderBox? after }) {
     assert(_currentlyUpdatingChildIndex == null);
-    RenderBox child;
-    owner.buildScope(this, () {
+    RenderBox? child;
+    owner!.buildScope(this, () {
       final bool insertFirst = after == null;
       assert(insertFirst || _childElements[afterIndex-1] != null);
-      _currentBeforeChild = insertFirst ? null : (_childElements[afterIndex-1].renderObject as RenderBox);
-      Element newChild;
+      _currentBeforeChild = insertFirst ? null : (_childElements[afterIndex-1]!.renderObject as RenderBox);
+      Element? newChild;
       try {
         _currentlyUpdatingChildIndex = index;
         newChild = updateChild(_childElements[index], _build(index), index);
@@ -222,17 +234,17 @@ class SectionSliverMultiBoxAdaptorElement extends RenderObjectElement implements
       } else {
         _childElements.remove(index);
       }
-      child = newChild.renderObject;
+      child = newChild?.renderObject as RenderBox?;
     });
 
     return child;
   }
 
   @override
-  Element updateChild(Element child, Widget newWidget, dynamic newSlot) {
-    final SectionSliverMultiBoxAdaptorParentData oldParentData = child?.renderObject?.parentData as SectionSliverMultiBoxAdaptorParentData;
-    final Element newChild = super.updateChild(child, newWidget, newSlot);
-    final SectionSliverMultiBoxAdaptorParentData newParentData = newChild?.renderObject?.parentData as SectionSliverMultiBoxAdaptorParentData;
+  Element? updateChild(Element? child, Widget? newWidget, dynamic newSlot) {
+    final SectionSliverMultiBoxAdaptorParentData? oldParentData = child?.renderObject?.parentData as SectionSliverMultiBoxAdaptorParentData?;
+    final Element? newChild = super.updateChild(child, newWidget, newSlot);
+    final SectionSliverMultiBoxAdaptorParentData? newParentData = newChild?.renderObject?.parentData as SectionSliverMultiBoxAdaptorParentData?;
 
     // Preserve the old layoutOffset if the renderObject was swapped out.
     if (oldParentData != newParentData && oldParentData != null && newParentData != null) {
@@ -243,7 +255,6 @@ class SectionSliverMultiBoxAdaptorElement extends RenderObjectElement implements
 
   @override
   void forgetChild(Element child) {
-    assert(child != null);
     assert(child.slot != null);
     assert(_childElements.containsKey(child.slot));
     _childElements.remove(child.slot);
@@ -255,11 +266,11 @@ class SectionSliverMultiBoxAdaptorElement extends RenderObjectElement implements
     final int index = renderObject.indexOf(child);
     assert(_currentlyUpdatingChildIndex == null);
     assert(index >= 0);
-    owner.buildScope(this, () {
+    owner!.buildScope(this, () {
       assert(_childElements.containsKey(index));
       try {
         _currentlyUpdatingChildIndex = index;
-        final Element result = updateChild(_childElements[index], null, index);
+        final Element? result = updateChild(_childElements[index], null, index);
         assert(result == null);
       } finally {
         _currentlyUpdatingChildIndex = null;
@@ -286,21 +297,21 @@ class SectionSliverMultiBoxAdaptorElement extends RenderObjectElement implements
 
   @override
   double estimateMaxScrollOffset(
-      SliverConstraints constraints, {
-        int firstIndex,
-        int lastIndex,
-        double leadingScrollOffset,
-        double trailingScrollOffset,
+      SliverConstraints? constraints, {
+        int? firstIndex,
+        int? lastIndex,
+        double? leadingScrollOffset,
+        double? trailingScrollOffset,
       }) {
-    final int childCount = this.childCount;
+    final int? childCount = estimatedChildCount;
     if (childCount == null)
       return double.infinity;
     return widget.estimateMaxScrollOffset(
       constraints,
-      firstIndex,
-      lastIndex,
-      leadingScrollOffset,
-      trailingScrollOffset,
+      firstIndex!,
+      lastIndex!,
+      leadingScrollOffset!,
+      trailingScrollOffset!,
     ) ?? _extrapolateMaxScrollOffset(
       firstIndex,
       lastIndex,
@@ -310,8 +321,59 @@ class SectionSliverMultiBoxAdaptorElement extends RenderObjectElement implements
     );
   }
 
+  /// The best available estimate of [childCount], or null if no estimate is available.
+  ///
+  /// This differs from [childCount] in that [childCount] never returns null (and must
+  /// not be accessed if the child count is not yet available, meaning the [createChild]
+  /// method has not been provided an index that does not create a child).
+  ///
+  /// See also:
+  ///
+  ///  * [SliverChildDelegate.estimatedChildCount], to which this getter defers.
+  int? get estimatedChildCount => widget.delegate.estimatedChildCount;
+
   @override
-  int get childCount => widget.delegate.estimatedChildCount;
+  int get childCount {
+    int? result = estimatedChildCount;
+    if (result == null) {
+      // Since childCount was called, we know that we reached the end of
+      // the list (as in, _build return null once), so we know that the
+      // list is finite.
+      // Let's do an open-ended binary search to find the end of the list
+      // manually.
+      int lo = 0;
+      int hi = 1;
+      const int max = kIsWeb
+          ? 9007199254740992 // max safe integer on JS (from 0 to this number x != x+1)
+          : ((1 << 63) - 1);
+      while (_build(hi - 1) != null) {
+        lo = hi - 1;
+        if (hi < max ~/ 2) {
+          hi *= 2;
+        } else if (hi < max) {
+          hi = max;
+        } else {
+          throw FlutterError(
+              'Could not find the number of children in ${widget.delegate}.\n'
+                  'The childCount getter was called (implying that the delegate\'s builder returned null '
+                  'for a positive index), but even building the child with index $hi (the maximum '
+                  'possible integer) did not return null. Consider implementing childCount to avoid '
+                  'the cost of searching for the final child.'
+          );
+        }
+      }
+      while (hi - lo > 1) {
+        final int mid = (hi - lo) ~/ 2 + lo;
+        if (_build(mid - 1) == null) {
+          hi = mid;
+        } else {
+          lo = mid;
+        }
+      }
+      result = lo;
+    }
+    return result;
+  }
 
   @override
   void didStartLayout() {
@@ -326,7 +388,7 @@ class SectionSliverMultiBoxAdaptorElement extends RenderObjectElement implements
     widget.delegate.didFinishLayout(firstIndex, lastIndex);
   }
 
-  int _currentlyUpdatingChildIndex;
+  int? _currentlyUpdatingChildIndex;
 
   @override
   bool debugAssertChildListLocked() {
@@ -350,12 +412,11 @@ class SectionSliverMultiBoxAdaptorElement extends RenderObjectElement implements
 
   @override
   void insertRenderObjectChild(covariant RenderObject child, int slot) {
-    assert(slot != null);
     assert(_currentlyUpdatingChildIndex == slot);
     assert(renderObject.debugValidateChild(child));
     renderObject.insert(child as RenderBox, after: _currentBeforeChild);
     assert(() {
-      final SectionSliverMultiBoxAdaptorParentData childParentData = child.parentData as SectionSliverMultiBoxAdaptorParentData;
+      final SectionSliverMultiBoxAdaptorParentData childParentData = child.parentData! as SectionSliverMultiBoxAdaptorParentData;
       assert(slot == childParentData.index);
       return true;
     }());
@@ -363,7 +424,6 @@ class SectionSliverMultiBoxAdaptorElement extends RenderObjectElement implements
 
   @override
   void moveRenderObjectChild(covariant RenderObject child, int oldSlot, int newSlot) {
-    assert(newSlot != null);
     assert(_currentlyUpdatingChildIndex == newSlot);
     renderObject.move(child as RenderBox, after: _currentBeforeChild);
   }
@@ -378,27 +438,27 @@ class SectionSliverMultiBoxAdaptorElement extends RenderObjectElement implements
   void visitChildren(ElementVisitor visitor) {
     // The toList() is to make a copy so that the underlying list can be modified by
     // the visitor:
-    assert(!_childElements.values.any((Element child) => child == null));
-    _childElements.values.toList().forEach(visitor);
+    assert(!_childElements.values.any((Element? child) => child == null));
+    _childElements.values.cast<Element>().toList().forEach(visitor);
   }
 
   @override
   void debugVisitOnstageChildren(ElementVisitor visitor) {
-    _childElements.values.where((Element child) {
-      final SectionSliverMultiBoxAdaptorParentData parentData = child.renderObject.parentData as SectionSliverMultiBoxAdaptorParentData;
-      double itemExtent;
+    _childElements.values.cast<Element>().where((Element child) {
+      final SliverMultiBoxAdaptorParentData parentData = child.renderObject!.parentData! as SliverMultiBoxAdaptorParentData;
+      final double itemExtent;
       switch (renderObject.constraints.axis) {
         case Axis.horizontal:
-          itemExtent = child.renderObject.paintBounds.width;
+          itemExtent = child.renderObject!.paintBounds.width;
           break;
         case Axis.vertical:
-          itemExtent = child.renderObject.paintBounds.height;
+          itemExtent = child.renderObject!.paintBounds.height;
           break;
       }
 
       return parentData.layoutOffset != null &&
-          parentData.layoutOffset < renderObject.constraints.scrollOffset + renderObject.constraints.remainingPaintExtent &&
-          parentData.layoutOffset + itemExtent > renderObject.constraints.scrollOffset;
+          parentData.layoutOffset! < renderObject.constraints.scrollOffset + renderObject.constraints.remainingPaintExtent &&
+          parentData.layoutOffset! + itemExtent > renderObject.constraints.scrollOffset;
     }).forEach(visitor);
   }
 }

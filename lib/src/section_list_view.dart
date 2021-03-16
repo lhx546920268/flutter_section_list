@@ -22,21 +22,24 @@ class SectionListView extends BoxScrollView {
   final bool dataChange;
 
   SectionListView.builder({
-    Key key,
+    Key? key,
     Axis scrollDirection = Axis.vertical,
     bool reverse = false,
-    ScrollController controller,
-    bool primary,
-    ScrollPhysics physics,
+    ScrollController? controller,
+    bool? primary,
+    ScrollPhysics? physics,
     bool shrinkWrap = false,
-    EdgeInsetsGeometry padding,
-    @required this.adapter,
+    EdgeInsetsGeometry? padding,
+    required this.adapter,
     bool addAutomaticKeepAlives = true,
     bool addRepaintBoundaries = true,
     bool addSemanticIndexes = true,
-    double cacheExtent,
+    double? cacheExtent,
     DragStartBehavior dragStartBehavior = DragStartBehavior.start,
-  }): assert(adapter != null), dataChange = adapter.notifyDataChange(),
+    ScrollViewKeyboardDismissBehavior keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.manual,
+    String? restorationId,
+    Clip clipBehavior = Clip.hardEdge,
+  }): dataChange = adapter.notifyDataChange(),
         childrenDelegate = SliverChildBuilderDelegate(
         (BuildContext context, int position) {
       return adapter.buildItem(context, position);
@@ -58,6 +61,9 @@ class SectionListView extends BoxScrollView {
         cacheExtent: cacheExtent,
         semanticChildCount: adapter.getItemCount(),
         dragStartBehavior: dragStartBehavior,
+        keyboardDismissBehavior: keyboardDismissBehavior,
+        restorationId: restorationId,
+        clipBehavior: clipBehavior
       );
 
   @override
@@ -71,9 +77,9 @@ class SectionSliverList extends SectionSliverMultiBoxAdaptorWidget {
   final SectionAdapter adapter;
 
   const SectionSliverList({
-    Key key,
-    @required SliverChildDelegate delegate,
-    @required this.adapter,
+    Key? key,
+    required SliverChildDelegate delegate,
+    required this.adapter,
   }) : super(key: key, delegate: delegate);
 
   @override
@@ -90,20 +96,20 @@ class SectionSliverList extends SectionSliverMultiBoxAdaptorWidget {
 
 class SectionRenderSliverList extends SectionRenderSliverMultiBoxAdaptor {
 
-  SectionAdapter _adapter;
+  late SectionAdapter _adapter;
 
   ///当前置顶的子视图
-  RenderBox _currentStickChild;
+  RenderBox? _currentStickChild;
 
   ///当前
-  int _stickSection;
+  int? _stickSection;
 
   ///主轴缓存
   SplayTreeMap<int, ItemGeometry> _itemGeometries= SplayTreeMap();
 
   SectionRenderSliverList({
-    @required RenderSliverBoxChildManager childManager,
-    @required SectionAdapter adapter,
+    required RenderSliverBoxChildManager childManager,
+    required SectionAdapter adapter,
   }) : super(childManager: childManager){
     _adapter = adapter;
   }
@@ -169,9 +175,9 @@ class SectionRenderSliverList extends SectionRenderSliverMultiBoxAdaptor {
     // These variables track the range of children that we have laid out. Within
     // this range, the children have consecutive indices. Outside this range,
     // it's possible for a child to get removed without notice.
-    RenderBox leadingChildWithLayout, trailingChildWithLayout;
+    RenderBox? leadingChildWithLayout, trailingChildWithLayout;
 
-    RenderBox earliestUsefulChild = firstChild;
+    RenderBox? earliestUsefulChild = firstChild;
 
     // A firstChild with null layout offset is likely a result of children
     // reordering.
@@ -179,35 +185,43 @@ class SectionRenderSliverList extends SectionRenderSliverMultiBoxAdaptor {
     // We rely on firstChild to have accurate layout offset. In the case of null
     // layout offset, we have to find the first child that has valid layout
     // offset.
-    if (childScrollOffset(firstChild) == null) {
+    if (childScrollOffset(firstChild!) == null) {
       int leadingChildrenWithoutLayoutOffset = 0;
-      while (childScrollOffset(earliestUsefulChild) == null) {
-        earliestUsefulChild = childAfter(firstChild);
+      while (earliestUsefulChild != null && childScrollOffset(earliestUsefulChild) == null) {
+        earliestUsefulChild = childAfter(earliestUsefulChild);
         leadingChildrenWithoutLayoutOffset += 1;
       }
       // We should be able to destroy children with null layout offset safely,
       // because they are likely outside of viewport
       collectGarbage(leadingChildrenWithoutLayoutOffset, 0);
-      assert(firstChild != null);
+      // If can not find a valid layout offset, start from the initial child.
+      if (firstChild == null) {
+        if (!addInitialChild()) {
+          // There are no children.
+          geometry = SliverGeometry.zero;
+          childManager.didFinishLayout();
+          return;
+        }
+      }
     }
 
     // Find the last child that is at or before the scrollOffset.
     earliestUsefulChild = firstChild;
-    for (double earliestScrollOffset = childScrollOffset(earliestUsefulChild);
-    earliestScrollOffset > scrollOffset;
-    earliestScrollOffset = childScrollOffset(earliestUsefulChild)) {
+    for (double earliestScrollOffset = childScrollOffset(earliestUsefulChild!)!;
+     earliestScrollOffset > scrollOffset;
+     earliestScrollOffset = childScrollOffset(earliestUsefulChild)!) {
       // We have to add children before the earliestUsefulChild.
       earliestUsefulChild = insertAndLayoutLeadingChild(childConstraints, parentUsesSize: true);
 
       if (earliestUsefulChild == null) {
-        final SectionSliverMultiBoxAdaptorParentData childParentData = firstChild.parentData as SectionSliverMultiBoxAdaptorParentData;
+        final SectionSliverMultiBoxAdaptorParentData childParentData = firstChild!.parentData! as SectionSliverMultiBoxAdaptorParentData;
         childParentData.layoutOffset = 0.0;
 
         if (scrollOffset == 0.0) {
           // insertAndLayoutLeadingChild only lays out the children before
           // firstChild. In this case, nothing has been laid out. We have
           // to lay out firstChild manually.
-          firstChild.layout(childConstraints, parentUsesSize: true);
+          firstChild!.layout(childConstraints, parentUsesSize: true);
           earliestUsefulChild = firstChild;
           leadingChildWithLayout = earliestUsefulChild;
           trailingChildWithLayout ??= earliestUsefulChild;
@@ -223,7 +237,7 @@ class SectionRenderSliverList extends SectionRenderSliverMultiBoxAdaptor {
         }
       }
 
-      final double firstChildScrollOffset = earliestScrollOffset - paintExtentOf(firstChild);
+      final double firstChildScrollOffset = earliestScrollOffset - paintExtentOf(firstChild!);
       // firstChildScrollOffset may contain double precision error
       if (firstChildScrollOffset < -precisionErrorTolerance) {
         // The first child doesn't fit within the viewport (underflow) and
@@ -237,7 +251,7 @@ class SectionRenderSliverList extends SectionRenderSliverMultiBoxAdaptor {
         double correction = 0.0;
         while (earliestUsefulChild != null) {
           assert(firstChild == earliestUsefulChild);
-          correction += paintExtentOf(firstChild);
+          correction += paintExtentOf(firstChild!);
           earliestUsefulChild = insertAndLayoutLeadingChild(childConstraints, parentUsesSize: true);
         }
         earliestUsefulChild = firstChild;
@@ -245,13 +259,13 @@ class SectionRenderSliverList extends SectionRenderSliverMultiBoxAdaptor {
           geometry = SliverGeometry(
             scrollOffsetCorrection: correction - earliestScrollOffset,
           );
-          final SectionSliverMultiBoxAdaptorParentData childParentData = firstChild.parentData as SectionSliverMultiBoxAdaptorParentData;
+          final SectionSliverMultiBoxAdaptorParentData childParentData = firstChild!.parentData! as SectionSliverMultiBoxAdaptorParentData;
           childParentData.layoutOffset = 0.0;
           return;
         }
       }
 
-      final SectionSliverMultiBoxAdaptorParentData childParentData = earliestUsefulChild.parentData as SectionSliverMultiBoxAdaptorParentData;
+      final SectionSliverMultiBoxAdaptorParentData childParentData = earliestUsefulChild!.parentData as SectionSliverMultiBoxAdaptorParentData;
       childParentData.layoutOffset = firstChildScrollOffset;
       assert(earliestUsefulChild == firstChild);
       leadingChildWithLayout = earliestUsefulChild;
@@ -266,11 +280,11 @@ class SectionRenderSliverList extends SectionRenderSliverMultiBoxAdaptor {
     // scroll offset.
 
     assert(earliestUsefulChild == firstChild);
-    assert(childScrollOffset(earliestUsefulChild) <= scrollOffset);
+    assert(childScrollOffset(earliestUsefulChild!)! <= scrollOffset);
 
     // Make sure we've laid out at least one child.
     if (leadingChildWithLayout == null) {
-      earliestUsefulChild.layout(childConstraints, parentUsesSize: true);
+      earliestUsefulChild!.layout(childConstraints, parentUsesSize: true);
       leadingChildWithLayout = earliestUsefulChild;
       trailingChildWithLayout = earliestUsefulChild;
     }
@@ -281,22 +295,22 @@ class SectionRenderSliverList extends SectionRenderSliverMultiBoxAdaptor {
     // that some children beyond that one have also been laid out.
 
     //当前section
-    SectionInfo currentSectionInfo;
+    SectionInfo? currentSectionInfo;
     double currentSectionScrollOffset = double.infinity;
 
     bool inLayoutRange = true;
-    RenderBox child = earliestUsefulChild;
-    int index = indexOf(child);
+    RenderBox? child = earliestUsefulChild;
+    int index = indexOf(child!);
 
-    double endScrollOffset = childScrollOffset(child) + paintExtentOf(child);
+    double endScrollOffset = childScrollOffset(child)! + paintExtentOf(child);
     if(endScrollOffset >= constraints.scrollOffset){
       currentSectionInfo = _adapter.sectionInfoForPosition(index);
       currentSectionScrollOffset = endScrollOffset;
     }
 
     _itemGeometries.putIfAbsent(index, () => ItemGeometry(
-        scrollOffset: childScrollOffset(child),
-        mainAxisExtent: paintExtentOf(child),
+        scrollOffset: childScrollOffset(child!)!,
+        mainAxisExtent: paintExtentOf(child!),
     ));
 
     bool advance() { // returns true if we advanced, false if we have no more children
@@ -304,12 +318,12 @@ class SectionRenderSliverList extends SectionRenderSliverMultiBoxAdaptor {
       assert(child != null);
       if (child == trailingChildWithLayout)
         inLayoutRange = false;
-      child = childAfter(child);
+      child = childAfter(child!);
       if (child == null)
         inLayoutRange = false;
       index += 1;
       if (!inLayoutRange) {
-        if (child == null || indexOf(child) != index) {
+        if (child == null || indexOf(child!) != index) {
           // We are missing a child. Insert it (and lay it out) if possible.
           child = insertAndLayoutChild(childConstraints,
             after: trailingChildWithLayout,
@@ -321,15 +335,15 @@ class SectionRenderSliverList extends SectionRenderSliverMultiBoxAdaptor {
           }
         } else {
           // Lay out the child.
-          child.layout(childConstraints, parentUsesSize: true);
+          child!.layout(childConstraints, parentUsesSize: true);
         }
         trailingChildWithLayout = child;
       }
       assert(child != null);
-      final SectionSliverMultiBoxAdaptorParentData childParentData = child.parentData as SectionSliverMultiBoxAdaptorParentData;
+      final SectionSliverMultiBoxAdaptorParentData childParentData = child!.parentData! as SectionSliverMultiBoxAdaptorParentData;
       childParentData.layoutOffset = endScrollOffset;
       assert(childParentData.index == index);
-      endScrollOffset = childScrollOffset(child) + paintExtentOf(child);
+      endScrollOffset = childScrollOffset(child!)! + paintExtentOf(child!);
 
       if(endScrollOffset >= constraints.scrollOffset && endScrollOffset < currentSectionScrollOffset){
         currentSectionInfo = _adapter.sectionInfoForPosition(index);
@@ -337,8 +351,8 @@ class SectionRenderSliverList extends SectionRenderSliverMultiBoxAdaptor {
       }
 
       _itemGeometries.putIfAbsent(index, () => ItemGeometry(
-        scrollOffset: childScrollOffset(child),
-        mainAxisExtent: paintExtentOf(child),
+        scrollOffset: childScrollOffset(child!)!,
+        mainAxisExtent: paintExtentOf(child!),
       ));
 
       return true;
@@ -353,7 +367,7 @@ class SectionRenderSliverList extends SectionRenderSliverMultiBoxAdaptor {
         // we want to make sure we keep the last child around so we know the end scroll offset
         collectGarbage(leadingGarbage - 1, 0);
         assert(firstChild == lastChild);
-        final double extent = childScrollOffset(lastChild) + paintExtentOf(lastChild);
+        final double extent = childScrollOffset(lastChild!)! + paintExtentOf(lastChild!);
         geometry = SliverGeometry(
           scrollExtent: extent,
           paintExtent: 0.0,
@@ -373,10 +387,10 @@ class SectionRenderSliverList extends SectionRenderSliverMultiBoxAdaptor {
 
     // Finally count up all the remaining children and label them as garbage.
     if (child != null) {
-      child = childAfter(child);
+      child = childAfter(child!);
       while (child != null) {
         trailingGarbage += 1;
-        child = childAfter(child);
+        child = childAfter(child!);
       }
     }
 
@@ -385,38 +399,40 @@ class SectionRenderSliverList extends SectionRenderSliverMultiBoxAdaptor {
 
     collectGarbage(leadingGarbage, trailingGarbage);
 
-    int firstIndex = indexOf(firstChild);
-    int lastIndex = indexOf(lastChild);
+    int firstIndex = indexOf(firstChild!);
+    int lastIndex = indexOf(lastChild!);
 
     bool hasStick = false;
     if(currentSectionInfo != null){
 
       //把header置顶
-      if(currentSectionInfo.isHeaderStick && currentSectionInfo.isExistHeader){
-        ItemGeometry geometry = _itemGeometries[currentSectionInfo.getHeaderPosition()];
+      if(currentSectionInfo!.isHeaderStick && currentSectionInfo!.isExistHeader){
+        ItemGeometry? geometry = _itemGeometries[currentSectionInfo!.getHeaderPosition()];
         if(geometry != null && geometry.scrollOffset < constraints.scrollOffset){
-          int index = currentSectionInfo.getHeaderPosition();
-          RenderBox child = addAndLayoutChild(childConstraints, index: index, after: lastChild);
+          int index = currentSectionInfo!.getHeaderPosition();
+          RenderBox? child = addAndLayoutChild(childConstraints, index: index, after: lastChild);
 
-          SectionSliverMultiBoxAdaptorParentData parentData = child.parentData as SectionSliverMultiBoxAdaptorParentData;
-          ItemGeometry lastGeometry = _itemGeometries[currentSectionInfo.sectionEnd];
-          if(lastGeometry != null){
-            parentData.layoutOffset = math.min(constraints.scrollOffset, lastGeometry.mainEnd - geometry.mainAxisExtent);
-          }else{
-            parentData.layoutOffset = constraints.scrollOffset;
+          if(child != null){
+            SectionSliverMultiBoxAdaptorParentData parentData = child.parentData as SectionSliverMultiBoxAdaptorParentData;
+            ItemGeometry? lastGeometry = _itemGeometries[currentSectionInfo!.sectionEnd];
+            if(lastGeometry != null){
+              parentData.layoutOffset = math.min(constraints.scrollOffset, lastGeometry.mainEnd - geometry.mainAxisExtent);
+            }else{
+              parentData.layoutOffset = constraints.scrollOffset;
+            }
+
+            _currentStickChild = child;
+            hasStick = true;
           }
-
-          _currentStickChild = child;
-          hasStick = true;
         }
 
-        if(_stickSection != currentSectionInfo.section){
-          _stickSection = currentSectionInfo.section;
-          int section = _stickSection;
+        if(_stickSection != currentSectionInfo!.section){
+          _stickSection = currentSectionInfo!.section;
+          int? section = _stickSection;
           //必须延迟，否则在回调中setState会抛出异常
           Timer(Duration(milliseconds: 100), () {
-            if(_stickSection == section){
-              _adapter.onSectionHeaderStick(_stickSection);
+            if(_stickSection != null && _stickSection == section){
+              _adapter.onSectionHeaderStick(_stickSection!);
             }
           });
         }
@@ -435,19 +451,19 @@ class SectionRenderSliverList extends SectionRenderSliverMultiBoxAdaptor {
         constraints,
         firstIndex: firstIndex,
         lastIndex: lastIndex,
-        leadingScrollOffset: childScrollOffset(firstChild),
+        leadingScrollOffset: childScrollOffset(firstChild!),
         trailingScrollOffset: endScrollOffset,
       );
-      assert(estimatedMaxScrollOffset >= endScrollOffset - childScrollOffset(firstChild));
+      assert(estimatedMaxScrollOffset >= endScrollOffset - childScrollOffset(firstChild!)!);
     }
     final double paintExtent = calculatePaintOffset(
       constraints,
-      from: childScrollOffset(firstChild),
+      from: childScrollOffset(firstChild!)!,
       to: endScrollOffset,
     );
     final double cacheExtent = calculateCacheOffset(
       constraints,
-      from: childScrollOffset(firstChild),
+      from: childScrollOffset(firstChild!)!,
       to: endScrollOffset,
     );
     final double targetEndScrollOffsetForPaint = constraints.scrollOffset + constraints.remainingPaintExtent;

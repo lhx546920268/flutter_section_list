@@ -43,7 +43,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _getListItem(int index, BuildContext context) {
-    String title;
+    String title = "";
     switch (index) {
       case 0:
         title = 'SectionListView';
@@ -59,15 +59,11 @@ class _MyHomePageState extends State<MyHomePage> {
           onTap: () {
             Navigator.of(context).push(MaterialPageRoute(
                 builder: (BuildContext context) {
-                  switch (index) {
-                    case 0:
-                      return SectionListDemo();
-
-                    case 1:
-                      return SectionGridViewDemo();
+                  if(index == 0){
+                    return SectionListDemo();
+                  }else{
+                    return SectionGridViewDemo();
                   }
-
-                  return null;
                 }));
           },
           title: Text(title, style: TextStyle(fontSize: 16)),

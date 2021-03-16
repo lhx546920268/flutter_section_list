@@ -4,7 +4,7 @@ class IndexPath {
   final int section;
   final int item;
 
-  IndexPath({this.section, this.item = 0});
+  IndexPath({required this.section, this.item = 0});
 
   @override
   String toString() {
@@ -35,15 +35,15 @@ class SectionInfo {
   dynamic headerGeometry;
 
   ///section 主轴最末端
-  double mainEnd;
+  double mainEnd = 0;
 
   ///这个section是否是空的
   bool get isEmpty => !(isExistHeader || isExistFooter || numberItems > 0);
 
   SectionInfo(
-      {@required this.section,
-      @required this.numberItems,
-      @required this.sectionBegin,
+      {required this.section,
+      required this.numberItems,
+      required this.sectionBegin,
       this.isExistHeader = false,
       this.isExistFooter = false,
       this.isHeaderStick = false});
@@ -109,9 +109,9 @@ class GridSectionInfo extends SectionInfo {
   double footerItemSpacing;
 
   GridSectionInfo(
-      {@required int section,
-      @required int numberItems,
-      @required int sectionBegin,
+      {required int section,
+      required int numberItems,
+      required int sectionBegin,
       bool isExistHeader = false,
       bool isExistFooter = false,
       bool isHeaderStick = false,
@@ -120,12 +120,7 @@ class GridSectionInfo extends SectionInfo {
       this.sectionInsets = EdgeInsets.zero,
       this.headerItemSpacing = 0,
       this.footerItemSpacing = 0})
-      : assert(mainAxisSpacing != null),
-        assert(crossAxisSpacing != null),
-        assert(sectionInsets != null),
-        assert(headerItemSpacing != null),
-        assert(footerItemSpacing != null),
-        super(
+      : super(
             section: section,
             numberItems: numberItems,
             sectionBegin: sectionBegin,

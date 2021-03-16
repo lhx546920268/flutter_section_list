@@ -11,13 +11,13 @@ class ItemGeometry{
   double mainAxisExtent;
 
   ItemGeometry({
-    this.scrollOffset,
-    this.mainAxisExtent,
+    required this.scrollOffset,
+    required this.mainAxisExtent,
   });
 
   ItemGeometry copyWith({
-    double scrollOffset,
-    double mainAxisExtent,
+    double? scrollOffset,
+    double? mainAxisExtent,
   }) {
     return ItemGeometry(
         scrollOffset: scrollOffset ?? this.scrollOffset,
@@ -35,20 +35,20 @@ class ItemGridGeometry extends ItemGeometry{
   double crossAxisExtent;
 
   ItemGridGeometry({
-    double scrollOffset,
-    this.crossAxisOffset,
-    double mainAxisExtent,
-    this.crossAxisExtent,
+    double scrollOffset = 0,
+    this.crossAxisOffset = 0,
+    double mainAxisExtent = 0,
+    this.crossAxisExtent = 0,
   }) : super(
     scrollOffset : scrollOffset,
     mainAxisExtent: mainAxisExtent
   );
 
   ItemGridGeometry copyWith({
-    double scrollOffset,
-    double crossAxisOffset,
-    double mainAxisExtent,
-    double crossAxisExtent,
+    double? scrollOffset,
+    double? crossAxisOffset,
+    double? mainAxisExtent,
+    double? crossAxisExtent,
   }) {
     return ItemGridGeometry(
         scrollOffset: scrollOffset ?? this.scrollOffset,
@@ -72,16 +72,16 @@ class RowGridGeometry{
   double scrollOffset;
 
   ///当前主轴上的最末端 item
-  ItemGridGeometry endGeometry;
-  double get mainEnd => endGeometry != null ? endGeometry.mainEnd : scrollOffset;
+  ItemGridGeometry? endGeometry;
+  double get mainEnd => endGeometry != null ? endGeometry!.mainEnd : scrollOffset;
 
   ///主轴上的外部item信息
-  List<ItemGridGeometry> outermostItemGeometries = List();
+  List<ItemGridGeometry> outermostItemGeometries = [];
 
-  RowGridGeometry({this.scrollOffset});
+  RowGridGeometry({required this.scrollOffset});
 
   RowGridGeometry copyWith({
-    double scrollOffset,
+    double? scrollOffset,
   }) {
 
 
@@ -122,7 +122,7 @@ class RowGridGeometry{
   void updateEndGeometry(ItemGridGeometry geometry){
     if(endGeometry == null){
       endGeometry = geometry;
-    }else if(geometry.mainEnd > endGeometry.mainEnd){
+    }else if(geometry.mainEnd > endGeometry!.mainEnd){
       endGeometry = geometry;
     }
   }
@@ -174,23 +174,24 @@ class PageGridGeometry{
   final int firstChildIndex;
 
   ///当前section
-  GridSectionInfo _sectionInfo;
+  late GridSectionInfo _sectionInfo;
 
   ///行布局信息
-  RowGridGeometry rowGridGeometry;
+  late RowGridGeometry rowGridGeometry;
 
   PageGridGeometry({
     this.scrollOffset = 0,
     this.endScrollOffset = 0,
     this.pageIndex = 0,
     this.firstChildIndex = 0,
-    GridSectionInfo sectionInfo,
-    this.rowGridGeometry
+    required GridSectionInfo sectionInfo,
+    RowGridGeometry? rowGridGeometry
   }){
     _sectionInfo = sectionInfo;
     if(rowGridGeometry == null){
       rowGridGeometry = RowGridGeometry(scrollOffset: scrollOffset);
     }
+    this.rowGridGeometry = rowGridGeometry;
   }
 
   ///item布局信息

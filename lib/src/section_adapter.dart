@@ -5,10 +5,10 @@ import 'package:flutter/widgets.dart';
 abstract class SectionAdapter {
 
   ///列表交叉轴大小
-  double crossAxisExtent;
+  double crossAxisExtent = 0;
 
   ///列表主轴大小
-  double mainAxisExtent;
+  double mainAxisExtent = 0;
 
   ///数据变了
   bool notifyDataChange();
@@ -20,10 +20,10 @@ abstract class SectionAdapter {
   int getItemCount();
 
   ///通过position获取对应的sectionInfo
-  SectionInfo sectionInfoForPosition(int position);
+  SectionInfo? sectionInfoForPosition(int position);
 
   ///获取对应section
-  SectionInfo sectionInfoForSection(int section);
+  SectionInfo? sectionInfoForSection(int section);
 
   ///创建sectionInfo
   SectionInfo createSection(int section, int numberOfItems, int position);
@@ -37,11 +37,11 @@ mixin SectionAdapterMixin implements SectionAdapter {
 
   ///列表交叉轴大小
   @override
-  double crossAxisExtent;
+  double crossAxisExtent = 0;
 
   ///列表主轴大小
   @override
-  double mainAxisExtent;
+  double mainAxisExtent = 0;
 
   @override
   bool notifyDataChange(){
@@ -51,10 +51,11 @@ mixin SectionAdapterMixin implements SectionAdapter {
   }
 
   ///item总数
-  int _totalCount;
-  final List<SectionInfo> _sectionInfos = List();
-  SectionInfo _headerSectionInfo;
-  SectionInfo _footerSectionInfo;
+  int? _totalCount;
+  int get totalCount => _totalCount ?? 0;
+  final List<SectionInfo> _sectionInfos = [];
+  SectionInfo? _headerSectionInfo;
+  SectionInfo? _footerSectionInfo;
 
   ///构建item 组件，内部使用，通常情况下子类不需要重写这个
   @override
@@ -62,11 +63,12 @@ mixin SectionAdapterMixin implements SectionAdapter {
 
     if(shouldExistHeader() && position == 0){
       return getHeader(context);
-    }else if(shouldExistFooter() && position == _totalCount - 1){
+    }else if(shouldExistFooter() && position == totalCount - 1){
       return getFooter(context);
     }
 
-    SectionInfo info = sectionInfoForPosition(position);
+    //这里sectionInfo肯定不能为空
+    SectionInfo info = sectionInfoForPosition(position)!;
     if (info.isHeader(position)) {
       return getSectionHeader(context, info.section);
     } else if (info.isFooter(position)) {
@@ -110,7 +112,7 @@ mixin SectionAdapterMixin implements SectionAdapter {
       _totalCount = count;
     }
 
-    return _totalCount;
+    return totalCount;
   }
 
   ///创建sectionInfo
@@ -134,7 +136,7 @@ mixin SectionAdapterMixin implements SectionAdapter {
 
   ///通过position获取对应的sectionInfo
   @override
-  SectionInfo sectionInfoForPosition(int position) {
+  SectionInfo? sectionInfoForPosition(int position) {
 
     if(_totalCount == null) return null;
 
@@ -142,7 +144,7 @@ mixin SectionAdapterMixin implements SectionAdapter {
       return _headerSectionInfo;
     }
 
-    if(position == _totalCount - 1 && shouldExistFooter()){
+    if(position == totalCount - 1 && shouldExistFooter()){
       return _footerSectionInfo;
     }
 
@@ -162,7 +164,7 @@ mixin SectionAdapterMixin implements SectionAdapter {
 
   ///获取对应section
   @override
-  SectionInfo sectionInfoForSection(int section) {
+  SectionInfo? sectionInfoForSection(int section) {
     if (section >= 0 && section < _sectionInfos.length) {
       return _sectionInfos[section];
     }
@@ -231,10 +233,10 @@ mixin SectionAdapterMixin implements SectionAdapter {
 abstract class SectionGridAdapter extends SectionAdapter {
 
   @override
-  GridSectionInfo sectionInfoForPosition(int position);
+  GridSectionInfo? sectionInfoForPosition(int position);
 
   @override
-  GridSectionInfo sectionInfoForSection(int section);
+  GridSectionInfo? sectionInfoForSection(int section);
 }
 
 mixin SectionGridAdapterMixin on SectionAdapterMixin implements SectionGridAdapter {
@@ -265,13 +267,13 @@ mixin SectionGridAdapterMixin on SectionAdapterMixin implements SectionGridAdapt
   }
 
   @override
-  GridSectionInfo sectionInfoForPosition(int position){
-    return super.sectionInfoForPosition(position);
+  GridSectionInfo? sectionInfoForPosition(int position){
+    return super.sectionInfoForPosition(position) as GridSectionInfo?;
   }
 
   @override
-  GridSectionInfo sectionInfoForSection(int section){
-    return super.sectionInfoForSection(section);
+  GridSectionInfo? sectionInfoForSection(int section){
+    return super.sectionInfoForSection(section) as GridSectionInfo?;
   }
 
   @override

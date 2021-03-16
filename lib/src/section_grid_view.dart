@@ -21,21 +21,23 @@ class SectionGridView extends BoxScrollView {
   final bool dataChange;
 
   SectionGridView.builder({
-    Key key,
+    Key? key,
     Axis scrollDirection = Axis.vertical,
     bool reverse = false,
-    ScrollController controller,
-    bool primary,
-    ScrollPhysics physics,
+    ScrollController? controller,
+    bool? primary,
+    ScrollPhysics? physics,
     bool shrinkWrap = false,
-    EdgeInsetsGeometry padding,
-    @required this.adapter,
+    EdgeInsetsGeometry? padding,
+    required this.adapter,
     bool addAutomaticKeepAlives = true,
     bool addRepaintBoundaries = true,
     bool addSemanticIndexes = true,
-    double cacheExtent,
-  })  : assert(adapter != null),
-        dataChange = adapter.notifyDataChange(),
+    double? cacheExtent,
+    Clip clipBehavior = Clip.hardEdge,
+    ScrollViewKeyboardDismissBehavior keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.manual,
+    String? restorationId,
+  })  : dataChange = adapter.notifyDataChange(),
         childrenDelegate = SliverChildBuilderDelegate(
           (BuildContext context, int position) {
             return adapter.buildItem(context, position);
@@ -56,6 +58,9 @@ class SectionGridView extends BoxScrollView {
           padding: padding,
           cacheExtent: cacheExtent,
           semanticChildCount: adapter.getItemCount(),
+          clipBehavior: clipBehavior,
+          keyboardDismissBehavior: keyboardDismissBehavior,
+          restorationId: restorationId
         );
 
   @override
@@ -73,7 +78,7 @@ class SectionSliverGrid extends SectionSliverMultiBoxAdaptorWidget {
   final SectionGridAdapter adapter;
 
   const SectionSliverGrid(
-      {Key key, @required SliverChildDelegate delegate, @required this.adapter})
+      {Key? key, required SliverChildDelegate delegate, required this.adapter})
       : super(
           key: key,
           delegate: delegate,
@@ -99,7 +104,7 @@ class SectionRenderSliverGrid extends SectionRenderSliverMultiBoxAdaptor {
   SectionGridAdapter _adapter;
 
   ///子视图，并不是所有子视图，只是拿来保存firstChild前面的子视图
-  List<RenderBox> _children = List();
+  List<RenderBox> _children = [];
 
   ///布局信息缓存
   SplayTreeMap<int, PageGridGeometry> _pageGridGeometries = SplayTreeMap();
@@ -108,14 +113,14 @@ class SectionRenderSliverGrid extends SectionRenderSliverMultiBoxAdaptor {
   int numberOfCachePages = 2;
 
   ///当前置顶的子视图
-  RenderBox _currentStickChild;
+  RenderBox? _currentStickChild;
 
   ///当前
-  int _stickSection;
+  int? _stickSection;
 
   SectionRenderSliverGrid(
-      {@required RenderSliverBoxChildManager childManager,
-      @required SectionGridAdapter adapter})
+      {required RenderSliverBoxChildManager childManager,
+      required SectionGridAdapter adapter})
       : _adapter = adapter,
         super(childManager: childManager);
 
@@ -167,10 +172,10 @@ class SectionRenderSliverGrid extends SectionRenderSliverMultiBoxAdaptor {
         BoxConstraints(minWidth: 0, maxWidth: constraints.crossAxisExtent);
 
     //确保子视图已计算出大小
-    firstChild.layout(childConstraint, parentUsesSize: true);
+    firstChild!.layout(childConstraint, parentUsesSize: true);
 
     //当前section
-    GridSectionInfo currentSectionInfo;
+    GridSectionInfo? currentSectionInfo;
 
     //需要布局的大小
     final double pageSize =
@@ -178,12 +183,12 @@ class SectionRenderSliverGrid extends SectionRenderSliverMultiBoxAdaptor {
 
     //无论什么时候都得从每一页的第一个子视图开始计算，否则scrollOffset会不准确，这里会按照numberOfCachePages来缓存对应的布局信息
     final int pageIndex = scrollOffset ~/ pageSize;
-    PageGridGeometry pageGridGeometry;
+    PageGridGeometry? pageGridGeometry;
     if (_pageGridGeometries.isEmpty) {
       //刚开始布局，肯定是从0开始
       pageGridGeometry = PageGridGeometry(
           endScrollOffset: pageSize,
-          sectionInfo: _adapter.sectionInfoForPosition(0));
+          sectionInfo: _adapter.sectionInfoForPosition(0)!);
       _pageGridGeometries[0] = pageGridGeometry;
     } else {
       //获取距离当前页最小的，如果已经存在布局数据，就不应该从第一个item开始布局了
@@ -192,7 +197,7 @@ class SectionRenderSliverGrid extends SectionRenderSliverMultiBoxAdaptor {
           _pageGridGeometries.lastKeyBefore(currentPageIndex)];
 
       //第一个子视图下标不对，拿上一个的
-      while (indexOf(firstChild) < pageGridGeometry.firstChildIndex) {
+      while (pageGridGeometry != null && indexOf(firstChild!) < pageGridGeometry.firstChildIndex) {
         currentPageIndex--;
         pageGridGeometry = _pageGridGeometries[
             _pageGridGeometries.lastKeyBefore(currentPageIndex)];
@@ -200,19 +205,19 @@ class SectionRenderSliverGrid extends SectionRenderSliverMultiBoxAdaptor {
     }
 
     //当前布局到的位置
-    double endScrollOffset = pageGridGeometry.scrollOffset;
-    RenderBox firstVisibleChild;
-    RenderBox lastVisibleChild;
+    double endScrollOffset = pageGridGeometry!.scrollOffset;
+    RenderBox? firstVisibleChild;
+    RenderBox? lastVisibleChild;
 
-    _children.add(firstChild);
-    RenderBox currentFirstChild = firstChild;
+    _children.add(firstChild!);
+    RenderBox? currentFirstChild = firstChild;
 
-    int index = indexOf(firstChild);
+    int index = indexOf(firstChild!);
 
     //获取第一个子视图前面的子视图，并且在当前缓存页的
     while (index > pageGridGeometry.firstChildIndex) {
       index--;
-      RenderBox child =
+      RenderBox? child =
           insertAndLayoutLeadingChild(childConstraint, parentUsesSize: true);
       if (child != null) {
         _children.add(child);
@@ -222,17 +227,17 @@ class SectionRenderSliverGrid extends SectionRenderSliverMultiBoxAdaptor {
     }
 
     GridSectionInfo sectionInfo =
-        _adapter.sectionInfoForPosition(indexOf(_children.last));
+        _adapter.sectionInfoForPosition(indexOf(_children.last))!;
     //设置子视图位置
     ItemGridGeometry setupUpGeometry(RenderBox child) {
       int index = indexOf(child);
       if (!sectionInfo.include(index)) {
-        sectionInfo = _adapter.sectionInfoForPosition(index);
+        sectionInfo = _adapter.sectionInfoForPosition(index)!;
       }
 
       //已超过当前缓存页
-      if (!pageGridGeometry.isAvailable(endScrollOffset, index)) {
-        PageGridGeometry previous = pageGridGeometry;
+      if (!pageGridGeometry!.isAvailable(endScrollOffset, index)) {
+        PageGridGeometry previous = pageGridGeometry!;
         int pageIndex = previous.pageIndex + 1;
         pageGridGeometry = _pageGridGeometries[pageIndex];
 
@@ -244,20 +249,20 @@ class SectionRenderSliverGrid extends SectionRenderSliverMultiBoxAdaptor {
               firstChildIndex: index,
               rowGridGeometry: previous.rowGridGeometry.copyWith(),
               sectionInfo: sectionInfo);
-          _pageGridGeometries[pageIndex] = pageGridGeometry;
-        } else if (pageGridGeometry.firstChildIndex > index) {
+          _pageGridGeometries[pageIndex] = pageGridGeometry!;
+        } else if (pageGridGeometry!.firstChildIndex > index) {
           pageGridGeometry = previous;
         }
       }
 
-      ItemGridGeometry geometry = pageGridGeometry.itemGeometries[index];
+      ItemGridGeometry? geometry = pageGridGeometry!.itemGeometries[index];
       if (geometry == null) {
         geometry = ItemGridGeometry(
             crossAxisExtent: paintCrossExtentOf(child),
             mainAxisExtent: paintExtentOf(child));
-        pageGridGeometry.setupScrollOffset(
+        pageGridGeometry!.setupScrollOffset(
             geometry, constraints, sectionInfo, index);
-        pageGridGeometry.itemGeometries[index] = geometry;
+        pageGridGeometry!.itemGeometries[index] = geometry;
         if (sectionInfo.isHeader(index)) {
           sectionInfo.headerGeometry = geometry;
         }
@@ -274,14 +279,14 @@ class SectionRenderSliverGrid extends SectionRenderSliverMultiBoxAdaptor {
           geometry.scrollOffset < targetEndScrollOffset) {
         if (firstVisibleChild == null) {
           firstVisibleChild = child;
-        } else if (childScrollOffset(firstVisibleChild) >
+        } else if (childScrollOffset(firstVisibleChild!)! >
             geometry.scrollOffset) {
           firstVisibleChild = child;
         }
         if (lastVisibleChild == null) {
           lastVisibleChild = child;
-        } else if (childScrollOffset(lastVisibleChild) +
-                paintExtentOf(lastVisibleChild) <=
+        } else if (childScrollOffset(lastVisibleChild!)! +
+                paintExtentOf(lastVisibleChild!) <=
             geometry.mainEnd) {
           lastVisibleChild = child;
         }
@@ -302,11 +307,11 @@ class SectionRenderSliverGrid extends SectionRenderSliverMultiBoxAdaptor {
     }
 
     RenderBox currentLastChild = _children.first;
-    index = indexOf(currentFirstChild);
+    index = indexOf(currentFirstChild!);
     //计算第一个视图后的并且在可见范围内的子视图
     while (endScrollOffset < targetEndScrollOffset) {
       index++;
-      RenderBox child = insertAndLayoutChild(childConstraint,
+      RenderBox? child = insertAndLayoutChild(childConstraint,
           after: currentLastChild, parentUsesSize: true);
       if (child != null) {
         currentLastChild = child;
@@ -328,8 +333,8 @@ class SectionRenderSliverGrid extends SectionRenderSliverMultiBoxAdaptor {
     }
 
     double trailingScrollOffset =
-        childScrollOffset(lastVisibleChild) + paintExtentOf(lastVisibleChild);
-    double leadingScrollOffset = childScrollOffset(firstVisibleChild);
+        childScrollOffset(lastVisibleChild!)! + paintExtentOf(lastVisibleChild!);
+    double leadingScrollOffset = childScrollOffset(firstVisibleChild!)!;
 
     //回收不可见的子视图
     collectGarbageItems(firstVisibleChild, lastVisibleChild);
@@ -337,30 +342,32 @@ class SectionRenderSliverGrid extends SectionRenderSliverMultiBoxAdaptor {
     bool hasStick = false;
     if (currentSectionInfo != null) {
       //把header置顶
-      if (currentSectionInfo.isHeaderStick &&
-          currentSectionInfo.isExistHeader) {
-        ItemGridGeometry geometry = currentSectionInfo.headerGeometry;
+      if (currentSectionInfo!.isHeaderStick &&
+          currentSectionInfo!.isExistHeader) {
+        ItemGridGeometry geometry = currentSectionInfo!.headerGeometry;
         if (geometry.scrollOffset < constraints.scrollOffset) {
-          int index = currentSectionInfo.getHeaderPosition();
-          RenderBox child = addAndLayoutChild(childConstraint,
+          int index = currentSectionInfo!.getHeaderPosition();
+          RenderBox? child = addAndLayoutChild(childConstraint,
               index: index, after: lastVisibleChild);
 
-          SectionSliverMultiBoxAdaptorParentData parentData =
-              child.parentData as SectionSliverMultiBoxAdaptorParentData;
-          parentData.layoutOffset = math.min(constraints.scrollOffset,
-              currentSectionInfo.mainEnd - geometry.mainAxisExtent + currentSectionInfo.sectionInsets.bottom);
-          parentData.crossAxisOffset = geometry.crossAxisOffset;
-          _currentStickChild = child;
-          hasStick = true;
+          if(child != null){
+            SectionSliverMultiBoxAdaptorParentData parentData =
+            child.parentData as SectionSliverMultiBoxAdaptorParentData;
+            parentData.layoutOffset = math.min(constraints.scrollOffset,
+                currentSectionInfo!.mainEnd - geometry.mainAxisExtent + currentSectionInfo!.sectionInsets.bottom);
+            parentData.crossAxisOffset = geometry.crossAxisOffset;
+            _currentStickChild = child;
+            hasStick = true;
+          }
         }
 
-        if(_stickSection != currentSectionInfo.section){
-          _stickSection = currentSectionInfo.section;
-          int section = _stickSection;
+        if(_stickSection != currentSectionInfo!.section){
+          _stickSection = currentSectionInfo!.section;
+          int? section = _stickSection;
           //必须延迟，否则在回调中setState会抛出异常
           Timer(Duration(milliseconds: 100), () {
-            if(_stickSection == section){
-              _adapter.onSectionHeaderStick(_stickSection);
+            if(_stickSection != null && _stickSection == section){
+              _adapter.onSectionHeaderStick(_stickSection!);
             }
           });
         }
@@ -376,8 +383,8 @@ class SectionRenderSliverGrid extends SectionRenderSliverMultiBoxAdaptor {
     } else {
       estimatedTotalExtent = childManager.estimateMaxScrollOffset(
         constraints,
-        firstIndex: indexOf(firstVisibleChild),
-        lastIndex: indexOf(lastVisibleChild),
+        firstIndex: indexOf(firstVisibleChild!),
+        lastIndex: indexOf(lastVisibleChild!),
         leadingScrollOffset: leadingScrollOffset,
         trailingScrollOffset: trailingScrollOffset,
       );
