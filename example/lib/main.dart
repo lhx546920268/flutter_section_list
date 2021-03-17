@@ -37,9 +37,9 @@ class _MyHomePageState extends State<MyHomePage> {
     );
     return Scaffold(
         appBar: appBar,
-        body: ListView(
-          children: List.generate(2, (index) => _getListItem(index, context)),
-        ));
+        body: ListView.builder(itemBuilder: (context, index){
+          return _getListItem(index, context);
+        }, itemCount: 2,));
   }
 
   Widget _getListItem(int index, BuildContext context) {

@@ -1,5 +1,8 @@
 # Change log
 
+#1.1.1
+>fix bug
+
 #1.1.0
 >Upgrade to flutter 2.0.2
 

@@ -28,7 +28,9 @@ class _SectionGridViewState extends State<SectionGridViewDemo> with SectionAdapt
   }
 
   void _changeCount(){
-    count = count == 20 ? 15 : 20;
+    setState(() {
+      count = count == 20 ? 15 : 20;
+    });
   }
 
   int count = 15;
@@ -38,7 +40,7 @@ class _SectionGridViewState extends State<SectionGridViewDemo> with SectionAdapt
     // TODO: implement getItem
 
     EdgeInsets inset = getSectionInsets(indexPath.section);
-    double totalWidth = crossAxisExtent - getCrossAxisSpacing(indexPath.section) - inset.left - inset.right;
+    double totalWidth = crossAxisExtent - inset.left - inset.right;
     double width;
     double height;
 
@@ -49,7 +51,7 @@ class _SectionGridViewState extends State<SectionGridViewDemo> with SectionAdapt
         height = 200;
         break;
       default :
-        width = totalWidth / 3 * 2;
+        width = totalWidth / 3 * 2 - getCrossAxisSpacing(indexPath.section);
         height = (200 - getMainAxisSpacing(indexPath.section)) / 2;
         break;
     }

@@ -311,8 +311,14 @@ class SectionRenderSliverGrid extends SectionRenderSliverMultiBoxAdaptor {
     //计算第一个视图后的并且在可见范围内的子视图
     while (endScrollOffset < targetEndScrollOffset) {
       index++;
-      RenderBox? child = insertAndLayoutChild(childConstraint,
-          after: currentLastChild, parentUsesSize: true);
+      RenderBox? child = childAfter(currentLastChild);
+      if(child == null || indexOf(child) != index){
+        child = insertAndLayoutChild(childConstraint,
+            after: currentLastChild, parentUsesSize: true);
+      }else{
+        child.layout(childConstraint, parentUsesSize: true);
+      }
+
       if (child != null) {
         currentLastChild = child;
         endScrollOffset =

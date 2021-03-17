@@ -12,6 +12,8 @@ class SectionListDemo extends StatefulWidget {
 
 class _SectionListDemoState extends State<SectionListDemo> with SectionAdapterMixin{
 
+  final List<Color> colors = [Colors.red, Colors.orange, Colors.yellow, Colors.green, Colors.cyan, Colors.blue, Colors.purple,];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,14 +34,17 @@ class _SectionListDemoState extends State<SectionListDemo> with SectionAdapterMi
 
   @override
   Widget getItem(BuildContext context, IndexPath indexPath) {
-    return Stack(
-      alignment: AlignmentDirectional.bottomCenter,
-      children: <Widget>[
-        ListTile(
-          title: Text('$indexPath'),
-        ),
-        Divider(height: 0.5,)
-      ],
+    return Container(
+      color: colors[indexPath.item % colors.length],
+      child: Stack(
+        alignment: AlignmentDirectional.bottomCenter,
+        children: <Widget>[
+          ListTile(
+            title: Text('$indexPath'),
+          ),
+          Divider(height: 0.5,)
+        ],
+      ),
     );
   }
 
