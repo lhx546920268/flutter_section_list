@@ -8,9 +8,6 @@ import 'package:flutter_section_list/src/section_sliver.dart';
 import 'package:flutter_section_list/src/section_sliver_multi_box_adapter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-
-// ignore: implementation_imports
-import 'package:flutter/src/rendering/sliver.dart';
 import 'dart:math' as math;
 
 ///可分区的网格列表

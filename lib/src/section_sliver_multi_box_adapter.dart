@@ -398,6 +398,7 @@ abstract class SectionRenderSliverMultiBoxAdaptor extends RenderSliver
         insert(child, after: after);
         childParentData._keptAlive = false;
         aChild = child;
+
       } else if(after != null) {
         SectionSliverMultiBoxAdaptorElement element = _childManager as SectionSliverMultiBoxAdaptorElement;
         aChild = element.createOneChild(index, indexOf(after), after: null);

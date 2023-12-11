@@ -301,6 +301,7 @@ class SectionRenderSliverList extends SectionRenderSliverMultiBoxAdaptor {
     bool inLayoutRange = true;
     RenderBox? child = earliestUsefulChild;
     int index = indexOf(child!);
+    final earliestUsefulIndex = index;
 
     double endScrollOffset = childScrollOffset(child)! + paintExtentOf(child);
     if(endScrollOffset >= constraints.scrollOffset){
@@ -399,24 +400,36 @@ class SectionRenderSliverList extends SectionRenderSliverMultiBoxAdaptor {
 
     collectGarbage(leadingGarbage, trailingGarbage);
 
+    //先保存下来，避免添加stick header 的时候第一个和最后一个child错了
     int firstIndex = indexOf(firstChild!);
     int lastIndex = indexOf(lastChild!);
 
     bool hasStick = false;
     if(currentSectionInfo != null){
-
       //把header置顶
       if(currentSectionInfo!.isHeaderStick && currentSectionInfo!.isExistHeader){
+
         ItemGeometry? geometry = _itemGeometries[currentSectionInfo!.getHeaderPosition()];
-        if(geometry != null && geometry.scrollOffset < constraints.scrollOffset){
+        bool shouldStick = false;
+        if (geometry == null) {
+          //当前可见的item超过了section的第一个，说明header已经看不到了
+          if (earliestUsefulIndex > currentSectionInfo!.sectionBegin) {
+            shouldStick = true;
+          }
+        } else {
+          shouldStick = geometry.scrollOffset < constraints.scrollOffset;
+        }
+        if(shouldStick){
           int index = currentSectionInfo!.getHeaderPosition();
-          RenderBox? child = addAndLayoutChild(childConstraints, index: index, after: lastChild);
+          RenderBox? child = addAndLayoutChild(childConstraints, index:
+          index, after: lastChild, parentUsesSize: true);
 
           if(child != null){
             SectionSliverMultiBoxAdaptorParentData parentData = child.parentData as SectionSliverMultiBoxAdaptorParentData;
             ItemGeometry? lastGeometry = _itemGeometries[currentSectionInfo!.sectionEnd];
             if(lastGeometry != null){
-              parentData.layoutOffset = math.min(constraints.scrollOffset, lastGeometry.mainEnd - geometry.mainAxisExtent);
+              final mainAxisExtent = geometry?.mainAxisExtent ?? paintExtentOf(child);
+              parentData.layoutOffset = math.min(constraints.scrollOffset, lastGeometry.mainEnd - mainAxisExtent);
             }else{
               parentData.layoutOffset = constraints.scrollOffset;
             }
@@ -442,7 +455,7 @@ class SectionRenderSliverList extends SectionRenderSliverMultiBoxAdaptor {
       _currentStickChild = null;
     }
 
-//    assert(debugAssertChildListIsNonEmptyAndContiguous());
+   // assert(debugAssertChildListIsNonEmptyAndContiguous());
     double estimatedMaxScrollOffset;
     if (reachedEnd) {
       estimatedMaxScrollOffset = endScrollOffset;
@@ -480,6 +493,7 @@ class SectionRenderSliverList extends SectionRenderSliverMultiBoxAdaptor {
     // expose a new child.
     if (estimatedMaxScrollOffset == endScrollOffset)
       childManager.setDidUnderflow(true);
+
     childManager.didFinishLayout();
   }
 }

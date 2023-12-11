@@ -10,7 +10,7 @@ abstract class SectionAdapter {
   ///列表主轴大小
   double mainAxisExtent = 0;
 
-  ///数据变了
+  ///清除数据
   bool notifyDataChange();
 
   ///构建item 组件，内部使用，通常情况下子类不需要重写这个

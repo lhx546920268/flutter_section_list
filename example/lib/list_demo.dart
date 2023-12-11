@@ -1,4 +1,6 @@
 
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_section_list/flutter_section_list.dart';
 
@@ -13,39 +15,71 @@ class SectionListDemo extends StatefulWidget {
 class _SectionListDemoState extends State<SectionListDemo> with SectionAdapterMixin{
 
   final List<Color> colors = [Colors.red, Colors.orange, Colors.yellow, Colors.green, Colors.cyan, Colors.blue, Colors.purple,];
+  late List<Section> sections;
+
+  List<Section> buildSections() {
+    final random = Random();
+    final length = colors.length - 1;
+    final data = <Section>[];
+    for(int i = 0;i < 100;i ++) {
+      final items = <Item>[];
+      for(int j = 0;j < 100;j ++) {
+        items.add(Item("Section = $i, Item = $j", colors[random.nextInt
+          (length)]));
+      }
+      data.add(Section("Section Header $i", colors[random.nextInt
+        (length)], items));
+    }
+    
+    return data;
+  }
+
+  @override
+  void initState() {
+    sections = buildSections();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('SectionListDemo'),),
-      body: SectionListView.builder(adapter: this),
-    );
+        appBar: AppBar(title: Text('SectionListDemo'),),
+        body: SectionListView.builder(adapter: this));
   }
 
   @override
   int numberOfSections() {
-    return 10;
+    return sections.length;
   }
 
   @override
   int numberOfItems(int section) {
-    return 15;
+    return sections[section].items.length;
   }
 
   @override
   Widget getItem(BuildContext context, IndexPath indexPath) {
-    return Container(
-      color: colors[indexPath.item % colors.length],
+    final item = sections[indexPath.section].items[indexPath.item];
+    return GestureDetector(key: ObjectKey(item), onTap: () {
+      setState(() {
+        final section = sections[indexPath.section];
+        section.items.removeAt(indexPath.item);
+        if (section.items.isEmpty) {
+          sections.removeAt(indexPath.section);
+        }
+      });
+    }, child: Container(
+      color: item.color,
       child: Stack(
         alignment: AlignmentDirectional.bottomCenter,
         children: <Widget>[
           ListTile(
-            title: Text('$indexPath'),
+            title: Text(item.title),
           ),
           Divider(height: 0.5,)
         ],
       ),
-    );
+    ),);
   }
 
   @override
@@ -65,31 +99,36 @@ class _SectionListDemoState extends State<SectionListDemo> with SectionAdapterMi
 
   @override
   Widget getSectionHeader(BuildContext context, int section) {
+    final data = sections[section];
+
     return Container(
-      key: GlobalKey(debugLabel: 'header $section'),
+      key: ObjectKey(data.title),
       height: 45,
-      color: Colors.blue,
+      color: data.color,
       child: Center(
-        child: Text('Header $section'),
+        child: Text(data.title),
       ),
     );
   }
 
   @override
   Widget getSectionFooter(BuildContext context, int section) {
+    final data = sections[section];
     return Container(
-      key: GlobalKey(debugLabel: 'footer $section'),
+      key: ObjectKey(data),
       height: 45,
-      color: Colors.green,
+      color: data.color,
       child: Center(
         child: Text('Footer $section'),
       ),
     );
   }
 
+  var existHeader = true;
+
   @override
   bool shouldExistHeader() {
-    return true;
+    return existHeader;
   }
 
   @override
@@ -99,13 +138,17 @@ class _SectionListDemoState extends State<SectionListDemo> with SectionAdapterMi
 
   @override
   Widget getHeader(BuildContext context) {
-    return Container(
+    return GestureDetector(onTap: () {
+      setState(() {
+        existHeader = false;
+      });
+    }, child: Container(
       height: 200,
       color: Colors.amber,
       child: Center(
         child: Text('Header'),
       ),
-    );
+    ),);
   }
 
   @override
@@ -120,3 +163,17 @@ class _SectionListDemoState extends State<SectionListDemo> with SectionAdapterMi
   }
 }
 
+class Section {
+  String title;
+  Color color;
+  List<Item> items;
+
+  Section(this.title, this.color, this.items);
+}
+
+class Item {
+  String title;
+  Color color;
+
+  Item(this.title, this.color);
+}

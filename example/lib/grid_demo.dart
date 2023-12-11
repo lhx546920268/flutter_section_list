@@ -29,11 +29,11 @@ class _SectionGridViewState extends State<SectionGridViewDemo> with SectionAdapt
 
   void _changeCount(){
     setState(() {
-      count = count == 20 ? 15 : 20;
+      count = count == 200 ? 150 : 200;
     });
   }
 
-  int count = 15;
+  int count = 150;
 
   @override
   Widget getItem(BuildContext context, IndexPath indexPath) {
