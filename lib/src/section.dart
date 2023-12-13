@@ -31,12 +31,6 @@ class SectionInfo {
   ///头部是否吸顶悬浮
   final bool isHeaderStick;
 
-  ///头部布局信息
-  dynamic headerGeometry;
-
-  ///section 主轴最末端
-  double mainEnd = 0;
-
   ///这个section是否是空的
   bool get isEmpty => !(isExistHeader || isExistFooter || numberItems > 0);
 

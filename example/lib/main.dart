@@ -1,8 +1,9 @@
 
+
 import 'package:example/grid_demo.dart';
 import 'package:example/list_demo.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(MyApp());
@@ -16,9 +17,10 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
         title: 'FlutterSectionListDemo',
+
         theme: ThemeData(
-          primarySwatch: Colors.blue,
-          visualDensity: VisualDensity.adaptivePlatformDensity,
+          platform: TargetPlatform.iOS,
+          useMaterial3: true
         ),
         home: MyHomePage());
   }
@@ -32,11 +34,10 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    var appBar = AppBar(
-      title: Text('FlutterSectionListDemo'),
-    );
     return Scaffold(
-        appBar: appBar,
+      appBar:  AppBar(
+        title: Text('FlutterSectionListDemo'),
+      ),
         body: ListView.builder(itemBuilder: (context, index){
           return _getListItem(index, context);
         }, itemCount: 2,));

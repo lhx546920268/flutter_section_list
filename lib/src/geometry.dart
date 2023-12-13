@@ -59,6 +59,9 @@ class ItemGridGeometry extends ItemGeometry{
   }
 
   double get crossEnd => crossAxisOffset + crossAxisExtent;
+
+  ///section 主轴最末端 header才有
+  double sectionMainEnd = 0;
 }
 
 

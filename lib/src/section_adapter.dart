@@ -10,7 +10,7 @@ abstract class SectionAdapter {
   ///列表主轴大小
   double mainAxisExtent = 0;
 
-  ///清除数据
+  ///内部使用
   bool notifyDataChange();
 
   ///构建item 组件，内部使用，通常情况下子类不需要重写这个
@@ -232,6 +232,11 @@ mixin SectionAdapterMixin implements SectionAdapter {
 ///section 网格适配器
 abstract class SectionGridAdapter extends SectionAdapter {
 
+  bool get isCacheInvalid;
+  //把缓存标记失效，刷新整个列表要用到
+  void invalidateCache();
+  void validateCache();
+
   @override
   GridSectionInfo? sectionInfoForPosition(int position);
 
@@ -240,6 +245,17 @@ abstract class SectionGridAdapter extends SectionAdapter {
 }
 
 mixin SectionGridAdapterMixin on SectionAdapterMixin implements SectionGridAdapter {
+
+  bool get isCacheInvalid => _cacheInvalid;
+  bool _cacheInvalid = false;
+  //把缓存标记失效，刷新整个列表要用到
+  void invalidateCache() {
+    _cacheInvalid = true;
+  }
+
+  void validateCache() {
+    _cacheInvalid = false;
+  }
 
   /// 滑动方向的 item间隔
   double getMainAxisSpacing(int section) {

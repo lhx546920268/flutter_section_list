@@ -1,4 +1,6 @@
 
+import 'package:easy_refresh/easy_refresh.dart';
+import 'package:example/list_demo.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:flutter_section_list/flutter_section_grid.dart';
@@ -15,6 +17,47 @@ class SectionGridViewDemo extends StatefulWidget{
 class _SectionGridViewState extends State<SectionGridViewDemo> with SectionAdapterMixin, SectionGridAdapterMixin {
 
   final List<Color> colors = [Colors.red, Colors.orange, Colors.yellow, Colors.green, Colors.cyan, Colors.blue, Colors.purple,];
+  late List<Section> sections;
+  final EasyRefreshController easyRefreshController = EasyRefreshController(
+    controlFinishLoad: true
+  );
+
+  @override
+  void initState() {
+    sections = buildSections();
+    super.initState();
+  }
+
+  List<Section> buildSections() {
+    final data = <Section>[];
+    for(int i = 0;i < 5;i ++) {
+      data.add(buildSection(i));
+    }
+
+    return data;
+  }
+
+  Section buildSection(int section) {
+    final length = colors.length - 1;
+    final random = Random();
+    final items = <Item>[];
+    for(int j = 0;j < 9;j ++) {
+      items.add(Item("Section = $section, Item = $j", colors[random.nextInt
+        (length)]));
+    }
+    return Section("Section Header $section", colors[random.nextInt
+      (length)], items);
+  }
+
+  addItems(Section section) {
+    final length = colors.length - 1;
+    final random = Random();
+    final items = section.items;
+    for(int j = 0;j < 18;j ++) {
+      items.add(Item("Section = $section, Item = ${items.length}", colors[random
+          .nextInt(length)]));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,21 +66,29 @@ class _SectionGridViewState extends State<SectionGridViewDemo> with SectionAdapt
       appBar: AppBar(
         title: Text("SectionGridView"),
       ),
-      body: SectionGridView.builder(adapter: this),
+      body: EasyRefresh(
+        controller: easyRefreshController,
+        child: SectionGridView.builder(adapter: this),
+        onLoad: _onLoadMore,
+      ),
     );
   }
 
-  void _changeCount(){
+  void _onLoadMore() async {
+    await Future.delayed(Duration(seconds: 2), _changeCount);
+  }
+
+  void _changeCount() {
     setState(() {
-      count = count == 200 ? 150 : 200;
+//      invalidateCache();
+    addItems(sections.last);
+    easyRefreshController.finishLoad(IndicatorResult.noMore);
+//     sections.add(buildSection(sections.length));
     });
   }
 
-  int count = 150;
-
   @override
   Widget getItem(BuildContext context, IndexPath indexPath) {
-    // TODO: implement getItem
 
     EdgeInsets inset = getSectionInsets(indexPath.section);
     double totalWidth = crossAxisExtent - inset.left - inset.right;
@@ -56,29 +107,25 @@ class _SectionGridViewState extends State<SectionGridViewDemo> with SectionAdapt
         break;
     }
 
-    return GestureDetector(
-      onTap: (){
-        _changeCount();
-      },
-      child: Container(
-        width: width,
-        height: height,
-        color: colors[Random().nextInt(colors.length - 1)],
-        child: Center(
-          child: Text('${indexPath.item}'),
-        ),
+    final item = sections[indexPath.section].items[indexPath.item];
+    return Container(
+      width: width,
+      height: height,
+      color: item.color,
+      child: Center(
+        child: Text(item.title),
       ),
     );
   }
 
   @override
   int numberOfItems(int section) {
-    return this.count;
+    return sections[section].items.length;
   }
 
   @override
   int numberOfSections() {
-    return 10;
+    return sections.length;
   }
 
   @override
@@ -127,7 +174,7 @@ class _SectionGridViewState extends State<SectionGridViewDemo> with SectionAdapt
       height: 45,
       color: Colors.blue,
       child: Center(
-        child: Text('Header $section'),
+        child: Text(sections[section].title),
       ),
     );
   }
@@ -149,28 +196,12 @@ class _SectionGridViewState extends State<SectionGridViewDemo> with SectionAdapt
   }
 
   @override
-  bool shouldExistFooter() {
-    return true;
-  }
-
-  @override
   Widget getHeader(BuildContext context) {
     return Container(
       height: 200,
       color: Colors.amber,
       child: Center(
         child: Text('Header'),
-      ),
-    );
-  }
-
-  @override
-  Widget getFooter(BuildContext context) {
-    return Container(
-      height: 200,
-      color: Colors.amber,
-      child: Center(
-        child: Text('Footer'),
       ),
     );
   }
